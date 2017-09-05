@@ -30,7 +30,7 @@ int init_ip_header(struct iphdr * ip_h, char * ifname, uint32_t daddr)
 	memset(ip_h, 0, sizeof(struct iphdr));
 
 	ip_h->version   =  0x4;//IPVERSION;
-	ip_h->ihl = 0x5;      /* Internet Control */
+	ip_h->ihl = 0x6;      /* Internet Control */
 	ip_h->tos = 0;
 	ip_h->tot_len  = htons(sizeof(struct igmp_pack));
 	ip_h->frag_off = 0;
@@ -54,6 +54,10 @@ int init_ip_header(struct iphdr * ip_h, char * ifname, uint32_t daddr)
 	ip_h->saddr = 192 + (168 << 8) + ((rand() % 255) << 16) + ((1 + rand() % 254) << 24);
 #endif*/
 	ip_h->daddr = daddr;
+
+	ip_h->ra1 = IPOPT_RA;
+	ip_h->ra2 = IPOPT_MINOFF;
+	ip_h->ra34 = IPOPT_OPTVAL;
 	return 0;
 }
 
@@ -69,6 +73,7 @@ int build_igmp_pl(struct igmphdr * igmp, __u8 type, __u8 time, uint32_t daddr)
 int init_raw_socket(int * s, char * ifname)
 {
 	const int on = 1;
+	//const int ip_router_alert = 1;
 	struct ifreq ifr;
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
@@ -97,6 +102,12 @@ int init_raw_socket(int * s, char * ifname)
 		perror ("setsockopt() failed to bind to interface ");
 		return -1;
 	}
+
+	/*if (0 > setsockopt (*s, SOL_SOCKET, IP_ROUTER_ALERT, &ip_router_alert, sizeof(ip_router_alert)))
+	{
+		perror ("setsockopt() failed IP_ROUTER_ALERT ");
+		return -1;
+	}*/
 
 	return 0;
 }

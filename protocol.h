@@ -45,34 +45,60 @@
 #define IGMP_GQUERY_CODE 0x64
 #define IGMP_SQUERY_CODE 0x64
 
-typedef struct igmp_pack
-{
-	struct iphdr   ip_hdr;
-	struct igmphdr pl;
-} igmp_pack;
-
 typedef struct iphdr_fixed {
+	//IP
+	__u8	version:4,
+	ihl:4;
+	__u8	tos;
 	__be16	tot_len;
 	__be16	id;
 	__be16	frag_off;
-	__u8	ihl:4,
-		version:4;
-	__u8	tos;
-	__sum16	check;
 	__u8	ttl;
 	__u8	protocol;
+	__sum16	check;
 	__be32	saddr;
 	__be32	daddr;
+	//Router alert
+	__u8           ra1;
+	__u8           ra2;
+	__be16         ra34;
 } iphdr_fixed;
+
+typedef struct igmp_pack
+{
+	struct iphdr_fixed ip_hdr;
+	struct igmphdr pl;
+	//unsigned char trailer[18];
+} igmp_pack;
 
 
 typedef struct igmp_frame
 {
-	struct ethhdr  frame_hdr;
-	//unsigned char sh[2];
-	struct iphdr_fixed ip_hdr;
-	struct igmphdr pl;
-	//unsigned char a[100];
+	//frame
+	__u8	h_dest[ETH_ALEN];
+	__u8	h_source[ETH_ALEN];
+	__be16		h_proto;
+	//IP
+	__u8	version:4,
+	ihl:4;
+	__u8	tos;
+	__be16	tot_len;
+	__be16	id;
+	__be16	frag_off;
+	__u8	ttl;
+	__u8	protocol;
+	__sum16	check;
+	__be32	saddr;
+	__be32	daddr;
+	//Router alert
+	__u8           ra1;
+	__u8           ra2;
+	__be16         ra34;
+	//IGMP
+	__u8 type;
+	__u8    code;
+	__sum16 csum;
+	__be32  group;
 } igmp_frame;
 
 unsigned short in_cksum(unsigned short *addr, int len);

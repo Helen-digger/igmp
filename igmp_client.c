@@ -177,52 +177,83 @@ int listen_queries(uint32_t * groups, char * ifname)
 {
 	//time_t start = 0;
 	int sd = 0;
-	igmp_frame p;
-	if (0 > (sd = socket(PF_INET, SOCK_DGRAM, 0)))
+	__u8 f[100] = {0};
+	igmp_frame * p = (igmp_frame *)f;
+	if (0 > (sd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))))
 	{
 		fprintf(stderr,"%s socket failed:%s\n", __func__, (errno ? strerror(errno) : "ok"));
 		return -1;
 	}
+
+	struct ifreq ifr;
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+	int fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+	if (ioctl (fd, SIOCGIFINDEX, &ifr) < 0)
+	{
+		perror ("ioctl() failed ");
+		return -1;
+	}
+
+	if (0 > setsockopt (sd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof (struct ifreq)))
+	{
+		perror ("setsockopt() failed to bind to interface ");
+		return -1;
+	}
+
 	ssize_t rcv;
 	for(;;)
 	{
 		do {
 			rcv = 0;
-			memset(&p, 0, sizeof(struct igmp_frame));
-			if (0 >( rcv = recv(sd, &p, sizeof(p), 0)))
+			memset(p, 0, sizeof(struct igmp_frame));
+			if (0 >( rcv = recv(sd, f, sizeof(f), 0)))
 			{
 				fprintf(stderr,"%s recvfrom failed:%s\n", __func__, (errno ? strerror(errno) : "ok"));
 				return -1;
 			}
-			if (p.pl.type == IGMP_HOST_MEMBERSHIP_QUERY && p.frame_hdr.h_proto == htons(ETH_P_IP)) break;
-				printf("recieved %lu , %lu\n", rcv, sizeof(p));
+			
+				printf("\n\nrecieved %lu , %lu\n", rcv, sizeof(p));
 
-				/*PRINT_MAC("shw:\t%02x:%02x:%02x:%02x:%02x:%02x\n",p.frame_hdr.h_source);
-				PRINT_MAC("dhw:\t%02x:%02x:%02x:%02x:%02x:%02x\n",p.frame_hdr.h_dest);
-				printf("proto:\t%x\n", ntohs(p.frame_hdr.h_proto));*/
+				PRINT_MAC("dhw:\t%02X:%02X:%02X:%02X:%02X:%02X\n",p->h_dest);
+				PRINT_MAC("shw:\t%02X:%02X:%02X:%02X:%02X:%02X\n",p->h_source);
+				printf("proto:\t%04X\n", ntohs(p->h_proto));
 
-				printf("ihl:\t%x\n", p.ip_hdr.ihl);
-				printf("ver:\t%x\n", p.ip_hdr.version);
-				printf("tos:\t%x\n", p.ip_hdr.tos);
-				printf("len:\t%x\n", ntohs(p.ip_hdr.tot_len));
-				printf("id:\t%x\n", ntohs(p.ip_hdr.id));
-				printf("frag:\t%x\n", ntohs(p.ip_hdr.frag_off));
-				printf("ttl:\t%x\n", p.ip_hdr.ttl);
-				printf("proto:\t%x\n", p.ip_hdr.protocol);
-				printf("check:\t%x\n", p.ip_hdr.check);
-				printf("saddr:\t%x\n", p.ip_hdr.saddr);//PRINT_IP("saddr:\t%x.%x.%x.%x\n", p.ip_hdr.saddr);
-				printf("daddr:\t%x\n", p.ip_hdr.daddr);//PRINT_IP("daddr:\t%x.%x.%x.%x\n", p.ip_hdr.daddr);
+				printf("ihl:\t%01X\n", p->ihl);
+				printf("ver:\t%01X\n", p->version);
+				printf("tos:\t%02X\n", p->tos);
+				printf("len:\t%u\n", ntohs(p->tot_len)); //printf("len:\t%04X\n", (p->tot_len));
+				printf("id:\t%u\n", ntohs(p->id));
+				printf("frag:\t%04X\n", ntohs(p->frag_off));
+				printf("ttl:\t%02X\n", p->ttl);
+				printf("proto:\t%02X\n", p->protocol);
+				printf("check:\t%04X\n", ntohs(p->check));
+				/*printf("saddr:\t%08X\n", p->saddr);*/PRINT_IP("saddr:\t%u.%u.%u.%u\n", p->saddr);
+				/*printf("daddr:\t%08X\n", p->daddr);*/PRINT_IP("daddr:\t%u.%u.%u.%u\n", p->daddr);
 
-				printf("type:\t%x\n", p.pl.type);
-				printf("code:\t%x\n", p.pl.code);
-				printf("chsum:\t%x\n", p.pl.csum);
-				printf("group:\t%x\n", ntohl(p.pl.group));//PRINT_IP("group:\t%x.%x.%x.%x\n", ntohl(p.pl.group));
+				printf("ra1:\t%02X\n", p->ra1);
+				printf("ra2:\t%02X\n", p->ra2);
+				printf("ra34:\t%04X\n", ntohs(p->ra34));
+
+				printf("type:\t%02X\n", p->type);
+				printf("code:\t%02X\n", p->code);
+				printf("chsum:\t%04X\n", p->csum);
+				/*printf("group:\t%08X\n", p->group);*/PRINT_IP("group:\t%u.%u.%u.%u\n", ntohl(p->group));
+
+				for(int i = 0; i< rcv; i++)
+				{
+					if (i>0 && i%16 == 0) printf("\n");
+					if (i%8 == 0) printf("\t");
+					printf("%02X ", f[i]);
+				}
 				printf("\n");
+				if (p->type == IGMP_HOST_MEMBERSHIP_QUERY && p->h_proto == htons(ETH_P_IP)) break;
 		} while (1);
 
 		//start = time(NULL);
-		//if (p.pl.group == 0) handle_general_query(groups, ifname, p, start);
-		//if (IS_MCAST(p.pl.group)) handle_group_spec_query(groups, ifname, &p);
+		//if (p->group == 0) handle_general_query(groups, ifname, p, start);
+		//if (IS_MCAST(p->group)) handle_group_spec_query(groups, ifname, &p);
 	}
 	close(sd);
 	return 0;
