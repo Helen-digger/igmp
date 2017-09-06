@@ -54,10 +54,6 @@ int init_ip_header(struct iphdr * ip_h, char * ifname, uint32_t daddr)
 	ip_h->saddr = 192 + (168 << 8) + ((rand() % 255) << 16) + ((1 + rand() % 254) << 24);
 #endif*/
 	ip_h->daddr = daddr;
-
-	ip_h->ra1 = IPOPT_RA;
-	ip_h->ra2 = IPOPT_MINOFF;
-	ip_h->ra34 = IPOPT_OPTVAL;
 	return 0;
 }
 

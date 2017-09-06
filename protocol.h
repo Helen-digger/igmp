@@ -66,7 +66,10 @@ typedef struct iphdr_fixed {
 
 typedef struct igmp_pack
 {
-	struct iphdr_fixed ip_hdr;
+	struct iphdr ip_hdr;
+	__u8           ra1;
+	__u8           ra2;
+	__be16         ra34;
 	struct igmphdr pl;
 	//unsigned char trailer[18];
 } igmp_pack;
@@ -124,6 +127,9 @@ int check_ip(char * ip_str);
 } while (0)
 
 #define SEND_PACK(_s_,_p_) do { \
+	_p_.ra1 = IPOPT_RA; \
+	_p_.ra2 = IPOPT_MINOFF; \
+	_p_.ra34 = IPOPT_OPTVAL; \
 	struct sockaddr_in dst; \
 	memset(&dst, 0, sizeof(struct sockaddr_in)); \
 	dst.sin_family = AF_INET; \
