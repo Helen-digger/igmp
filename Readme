@@ -1,0 +1,17 @@
+For igmp_client
+To start igmp_client
+Usage:sudo ./igmp_client -i <IFNAME> -b <start-IP> [-e <end-IP>]
+
+Usage of igmp_client CLI:
+	add	<IP> - add group
+	del	<IP> - delete group
+	groups	show added groups
+	timers	show active timers value
+	exit	stop client and quit
+
+For gen_igmp
+Usage: sudo ./gen_igmp -i <IFNAME> [-g] [-s <IP>]
+
+For gen_gq.py and gen_sgq.py
+Usage: sudo python ./gen_gq <IFNAME>
+Usage: sudo python ./gen_sgq <IFNAME>
