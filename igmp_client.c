@@ -216,9 +216,9 @@ int main_loop(struct timers * timers, char * ifname)
 	uint8_t buffer[BUFF_SIZE] = {0};
 	igmp_pack * p = (igmp_pack *)(buffer + sizeof(struct ether_header));
 
-	if (0 > (sd_snd = init_raw_socket(ifname)))
+	if (0 > (sd_snd = socket_cooked_igmp(ifname)))
 	{
-		fprintf(stderr,"%s: init_raw_socket failed%s\n", __func__, (errno ? strerror(errno) : "ok"));
+		fprintf(stderr,"%s: socket_cooked_igmp failed%s\n", __func__, (errno ? strerror(errno) : "ok"));
 		return -1;
 	}
 	if (0 > (sd_rcv = socket_filtering_igmp(ifname)))

@@ -78,7 +78,7 @@ int build_ip_header(struct iphdr * ip_h, char * ifname, uint32_t daddr);
 
 int build_igmp_pl(struct igmp * pl, u_int8_t igmp_type, u_int8_t time, uint32_t daddr);
 
-int init_raw_socket(char * ifname);
+int socket_cooked_igmp(char * ifname);
 
 int socket_filtering_igmp(char * ifname);
 

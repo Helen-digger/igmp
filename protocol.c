@@ -52,7 +52,7 @@ int build_igmp_pl(struct igmp * pl, u_int8_t igmp_type, u_int8_t time, uint32_t 
 	return 0;
 }
 
-int init_raw_socket(char * ifname)
+int socket_cooked_igmp(char * ifname)
 {
 	int s = 0;
 	const int on = 1;
